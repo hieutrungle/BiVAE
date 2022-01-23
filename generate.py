@@ -10,6 +10,7 @@ def generate(model, sample, img_folder, img_name='gen_image.png'):
         plt.subplot(4, 4, i + 1)
         plt.imshow(sample[i], cmap="gray")
         plt.axis('off')
+    plt.savefig(os.path.join(img_folder, "original_images.png"))
 
     fig2 = plt.figure(figsize=(8, 8))
     for i in range(16):

@@ -31,40 +31,22 @@ def compute_loss(model, x_orig, batch_size, kl_weight=1.0, training=False):
 
     kl_loss = kl_loss / batch_size
     recon_loss = recon_loss / batch_size
-
-    # kl_loss = tf.nn.compute_average_loss(kl_loss, batch_size)
-    # recon_loss = tf.nn.compute_average_loss(recon_loss, batch_size)
     # kl_loss = compute_kl_loss(model)
     total_loss = recon_loss + tf.multiply(kl_weight, kl_loss)
     # print(f"\nrecon_loss: {recon_loss.numpy():0.6f} \tkl_loss: {kl_loss.numpy():0.6f}" +
     #         f"\t total_loss: {total_loss.numpy():0.6f}")
     return (total_loss, recon_loss, kl_loss)
 
-# @tf.function
-# def train_step(model, x_orig, optimizer, batch_size, kl_weight=1.0):
-#     with tf.GradientTape() as tape:
-#         (total_loss, recon_loss, kl_loss) = compute_loss(model, x_orig, batch_size, 
-#                                                         kl_weight, training=True)
-#         total_loss += sum(model.losses)
-#     gradients = tape.gradient(total_loss, model.trainable_variables)
-#     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-#     return (total_loss, recon_loss, kl_loss)
-
-# # @tf.function
-# def test_step(model, x_orig, batch_size, kl_weight=1.0):
-#     (total_loss, recon_loss, kl_loss) = compute_loss(model, x_orig, batch_size, 
-#                                                         kl_weight, training=False)
-#     total_loss += sum(model.losses)
-#     return (total_loss, recon_loss, kl_loss)
-
 
 @tf.function
 def train_step(model, data_iter, losses, optimizer, 
                 batch_size, steps_per_execution, kl_weight, strategy):
-    def train_step_fn(model, x_orig, losses, optimizer, batch_size, kl_weight=1.0):
+    def train_step_fn(model, x_orig, losses, 
+                    optimizer, batch_size, kl_weight=1.0):
         with tf.GradientTape() as tape:
-            (total_loss, recon_loss, kl_loss) = compute_loss(model, x_orig, batch_size, 
-                                                        kl_weight, training=True)
+            (total_loss, recon_loss, kl_loss) = compute_loss(model, x_orig, 
+                                                        batch_size, kl_weight, 
+                                                        training=True)
             total_loss += sum(model.losses)
         gradients = tape.gradient(total_loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -79,7 +61,6 @@ def train_step(model, data_iter, losses, optimizer,
             train_step_fn,
             args=(model, next(data_iter), losses, optimizer, batch_size, kl_weight)
             )
-
 
 def train(model, iterator, epochs, optimizer, train_portion, 
         model_dir, batch_size, steps_per_execution, kl_anneal_portion,
@@ -129,13 +110,9 @@ def train(model, iterator, epochs, optimizer, train_portion,
 
         start_time = timeit.default_timer()
         
-        # training loop
+        # training
         tqdm.write(f"Epoch {epoch} ")
-        # train_loop(model, iterator, iterator, train_losses, val_losses,
-        #         optimizer, batch_size, steps_per_execution,
-        #         kl_weight=kl_weight, strategy=strategy)
 
-        # run training step
         train_step(model, iterator, tuple(train_losses), optimizer,
                     tf.constant(batch_size, dtype=tf.float32),
                     tf.constant(steps_per_execution, dtype=tf.float32),
@@ -152,10 +129,12 @@ def train(model, iterator, epochs, optimizer, train_portion,
                     f"LR: {current_lr:0.5f}, kl_weight: {kl_weight:0.5f}, \n\t" +
                     f"kl_train_loss: {kl_train_loss.result():0.5f}, " +
                     f"recon_train_loss: {recon_train_loss.result():0.5f}, " +
-                    f"train_loss: {train_loss.result():0.5f}, \n\t" + 
-                    f"kl_val_loss: {kl_val_loss.result():0.5f}, " +
-                    f"recon_val_loss: {recon_val_loss.result():0.5f}, " + 
-                    f"val_loss: {val_loss.result():0.5f}")
+                    f"train_loss: {train_loss.result():0.5f}, \n\t"
+                    # f"kl_val_loss: {kl_val_loss.result():0.5f}, " +
+                    # f"recon_val_loss: {recon_val_loss.result():0.5f}, " + 
+                    # f"val_loss: {val_loss.result():0.5f}"
+                    )
+                    
         kl_weight = min(max((epoch)/(kl_anneal_portion*epochs), min_kl_weight), 1)
 
         training_results = (train_loss_results, val_loss_results, total_training_time)
@@ -164,13 +143,15 @@ def train(model, iterator, epochs, optimizer, train_portion,
         if (not epoch % epochs_til_ckpt) and epoch:
             save_training_parameters(checkpoints_dir, epoch, model, training_results)
 
-        # tf.keras.backend.clear_session()
         gc.collect()
+        
+    print(f"total training time: {total_training_time:0.5f}")
     print(f"\nFinished Training!!!")
+    
     # save model at end of training
     save_training_parameters(checkpoints_dir, epochs, model, training_results)
 
-    generate(model, next(iterator), model_dir, "gen_img_from_training.png")
+    # generate(model, next(iterator), model_dir, "gen_img_from_training.png")
     
 
 def save_training_parameters(checkpoints_dir, epochs, model, training_results):
