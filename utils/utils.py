@@ -55,11 +55,12 @@ def mkdir_if_not_exist(path):
         os.makedirs(path)
 
 # Create folders to store training information
-def mkdir_storage(model_dir):
+def mkdir_storage(model_dir, resume={}):
     if os.path.exists(os.path.join(model_dir, 'summaries')):
-        val = input("The model directory %s exists. Overwrite? (y/n) " % model_dir)
-        print()
-        if val == 'y':
+        if len(resume) == 0:
+        # val = input("The model directory %s exists. Overwrite? (y/n) " % model_dir)
+        # print()
+        # if val == 'y':
             if os.path.exists(os.path.join(model_dir, 'summaries')):
                 shutil.rmtree(os.path.join(model_dir, 'summaries'))
             if os.path.exists(os.path.join(model_dir, 'checkpoints')):

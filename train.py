@@ -80,55 +80,12 @@ def train_step(model, data_iter, losses, optimizer,
             args=(model, next(data_iter), losses, optimizer, batch_size, kl_weight)
             )
 
-def train_loop(model, iterator, val_data, train_losses, val_losses,
-                optimizer, batch_size, steps_per_execution, kl_weight, strategy):
-
-    
-    # History = namedtuple('History', 'history')
-    # history = History(history={'train_loss': [], 
-    #                           'val_loss': [], 
-    #                           'sparse_categorical_accuracy': [], 
-    #                           'val_sparse_categorical_accuracy': []})
-
-    
-
-    # (train_loss, recon_train_loss, kl_train_loss) = train_losses
-    # pbar = tqdm(total=iterator)
-    # num_batches = 0
-    # for step, x_train in enumerate(train_data):
-    #     losses = distributed_train_step(model, x_train, optimizer, batch_size, kl_weight, strategy)
-    #     # losses = train_step(model, tf.convert_to_tensor(x_train, dtype=tf.float32), 
-    #     #                     optimizer, batch_size, 
-    #     #                     kl_weight=kl_weight)
-    #     num_batches += 1
-    #     train_loss.update_state(losses[0]/ num_batches)
-    #     recon_train_loss.update_state(losses[1]/ num_batches)
-    #     kl_train_loss.update_state(losses[2]/ num_batches)
-    #     pbar.update(1)
-    # pbar.close()
-        
-    # (val_loss, recon_val_loss, kl_val_loss) = val_losses
-    # for _, x_val in enumerate(val_data):
-    #     # losses = test_step(model, tf.convert_to_tensor(x_val), 
-    #     #                     batch_size, kl_weight=kl_weight)
-    #     losses = distributed_test_step(model, x_val, batch_size, kl_weight, strategy)
-    #     val_loss.update_state(losses[0])
-    #     recon_val_loss.update_state(losses[1])
-    #     kl_val_loss.update_state(losses[2])
-
-    # history.history['sparse_categorical_accuracy'].append(train_accuracy.result().numpy())
-    # history.history['val_sparse_categorical_accuracy'].append(valid_accuracy.result().numpy())
-    # history.history['loss'].append(train_loss.result().numpy() / (BATCH_SIZE*epoch_steps))
-    # history.history['val_loss'].append(valid_loss.result().numpy() / (BATCH_SIZE*valid_epoch_steps))
-
-    tf.keras.backend.clear_session()
-    gc.collect()
 
 def train(model, iterator, epochs, optimizer, train_portion, 
         model_dir, batch_size, steps_per_execution, kl_anneal_portion,
         epochs_til_ckpt, steps_til_summary, resume_checkpoint, strategy):
     
-    summaries_dir, checkpoints_dir = utils.mkdir_storage(model_dir)
+    summaries_dir, checkpoints_dir = utils.mkdir_storage(model_dir, resume_checkpoint)
 
     # Save training parameters if we need to resume training in the future
     start_epoch = 1
