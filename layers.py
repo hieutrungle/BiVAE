@@ -285,7 +285,8 @@ class InvertedResidual(tf.keras.layers.Layer):
         assert strides in [1, 2, -1]
 
         self.hidden_dim = int(round(channel * ex))
-        groups = self.hidden_dim
+        # groups = self.hidden_dim
+        groups = 1
 
         self.conv0 = ConvWNElu(self.hidden_dim, kernel_size=1, strides=strides, padding=padding)
         self.conv1 = ConvWN(self.hidden_dim, kernel_size=kernel_size, strides=1, padding=padding, groups=groups)

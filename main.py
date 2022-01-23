@@ -89,11 +89,11 @@ def main(args):
                 epochs = args.epochs
                 lr = args.learning_rate
                 lr_min = args.learning_rate_min
-                train_portion = 1
+                train_portion = args.train_portion
                 steps_per_execution = dataio.data_dim[0] // global_batch_size
 
                 # optimizer
-                decay_steps = int(dataio.data_dim[0] * train_portion) * (epochs/4)
+                # decay_steps = int(dataio.data_dim[0] * train_portion) * (epochs/4)
                 decay_steps = int(steps_per_execution*0.8)
                 lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
                     lr, first_decay_steps=decay_steps,
