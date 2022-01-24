@@ -32,9 +32,9 @@ def main(args):
             dataio.load_data(args.dataset))
             )
 
+        # sys.exit()
 
         # Model Initialization
-        # print(f"iterator: {next(iterator).shape}")
         in_shape = list(dataio.data_dim[1:])
         model_arch = utils.get_model_arch(args.model_arch)
         print(f"model_arch: {args.model_arch}")

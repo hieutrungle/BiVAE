@@ -31,6 +31,7 @@ class Data():
                     errno.ENOENT, os.strerror(errno.ENOENT), data_name)
 
         # Make data_len divisible by batch_size
+
         data = self.complete_data_with_batch(data)
         self.data_dim = data.shape
 
@@ -81,6 +82,8 @@ class Data():
         # Stack new separated partitions into one united set
         data = np.vstack([self.padder.split_image(data[i], self.padder.tile_size) 
                             for i in range(data.shape[0])])
+
+        utils.get_data_info(data)
 
         return data
 

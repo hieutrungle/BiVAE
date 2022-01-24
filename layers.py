@@ -110,7 +110,7 @@ class ConvWN(tf.keras.layers.Layer):
                 kernel_initializer=tf.keras.initializers.HeNormal(),
                 bias_initializer='zeros',
                 # kernel_regularizer=SpectralNormRegularizer(sr=0.1,num_iter=2),
-                kernel_regularizer=tf.keras.regularizers.L2(l2=0.01),
+                kernel_regularizer=tf.keras.regularizers.L2(l2=0.0025),
                 name=None, **kwargs):
         super().__init__(name=name, **kwargs)
         self.conv2d_weight_normalization = tfa.layers.WeightNormalization(

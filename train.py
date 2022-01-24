@@ -37,6 +37,8 @@ def compute_loss(model, x_orig, batch_size, kl_weight=1.0, training=False):
     #         f"\t total_loss: {total_loss.numpy():0.6f}")
     return (total_loss, recon_loss, kl_loss)
 
+def checked_nemuric_loss(loss): 
+    return tf.debugging.check_numerics(loss, message='checking loss')
 
 @tf.function
 def train_step(model, data_iter, losses, optimizer, 
@@ -118,6 +120,8 @@ def train(model, iterator, epochs, optimizer, train_portion,
                     tf.constant(steps_per_execution, dtype=tf.int32),
                     tf.constant(kl_weight, dtype=tf.float32), strategy)
         
+        # checked_nemuric_loss(train_loss.result().numpy())
+
         train_loss_results.append(train_loss.result().numpy())
         val_loss_results.append(val_loss.result().numpy())
 

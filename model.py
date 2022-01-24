@@ -268,7 +268,6 @@ class VariationalAutoencoder(tf.keras.Model):
     def init_decoder_output(self, mult):
         return tf.keras.layers.Conv2D(1, kernel_size=1, strides=1, padding="same",
                                 kernel_initializer=tf.keras.initializers.HeNormal(),
-                                kernel_regularizer=tf.keras.regularizers.L2(l2=0.001),
                                 name="decoder_output")
 
     def call(self, x, training=False):
