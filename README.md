@@ -2,15 +2,16 @@
 
 
 # Quick start
-1. Training: `python main.py --epochs 200 --model_path model_output/vae/`
+1. Training: `python main.py --use_se --num_initial_channel 8 --num_process_blocks 3 --num_preprocess_cells 1 --num_postprocess_cells 1 --batch_size 64 --epochs 55 --model_path ./model_output/cesm_test --dataset cesm --tile_size 128
+`
 
-2. Evaluating: `python main.py --eval --model_path model_output/vae/`
+2. Evaluating: ``
 
-3. Generating images: `python main.py --generate --model_path model_output/vae/checkpoints/model_000200 --path_img_output model_output/vae/`
+3. Generating images: ``
 
 
 # GitHub URL
-**[https://github.com/GarlicSoup/pivae](https://github.com/GarlicSoup/pivae)**
+**[]()**
 
 # License
-This program is created by [Hieu Le](https://github.com/GarlicSoup)
+This program is created by [Hieu Le](https://github.com/hietrungle)
