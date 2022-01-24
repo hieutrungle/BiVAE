@@ -115,7 +115,7 @@ def train(model, iterator, epochs, optimizer, train_portion,
 
         train_step(model, iterator, tuple(train_losses), optimizer,
                     tf.constant(batch_size, dtype=tf.float32),
-                    tf.constant(steps_per_execution, dtype=tf.float32),
+                    tf.constant(steps_per_execution, dtype=tf.int32),
                     tf.constant(kl_weight, dtype=tf.float32), strategy)
         
         train_loss_results.append(train_loss.result().numpy())

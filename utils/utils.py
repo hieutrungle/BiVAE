@@ -166,18 +166,6 @@ def find_dim_sblock(data:np.ndarray, block_size:int, verbose:bool=True):
 
     return num_block_row, num_block_col
 
-def split_image(image3, tile_size):
-    image_shape = tf.shape(image3)
-    tile_rows = tf.reshape(image3, [image_shape[0], -1, tile_size, image_shape[2]])
-    serial_tiles = tf.transpose(tile_rows, [1, 0, 2, 3])
-    return tf.reshape(serial_tiles, [-1, tile_size, tile_size, image_shape[2]])
-
-def unsplit_image(tiles4, image_shape):
-    tile_width = tf.shape(tiles4)[1]
-    serialized_tiles = tf.reshape(tiles4, [-1, image_shape[0], tile_width, image_shape[2]])
-    rowwise_tiles = tf.transpose(serialized_tiles, [1, 0, 2, 3])
-    return tf.reshape(rowwise_tiles, [image_shape[0], image_shape[1], image_shape[2]])
-
 def get_folder_size(start_path:str='.')->int:
     total_size = 0
     for dirpath, dirnames, filenames in os.walk(start_path):

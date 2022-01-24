@@ -12,8 +12,7 @@ from reconstruct import reconstruct_img
 # from hard_code_model import VariationalAutoencoder
 from model import VariationalAutoencoder
 import data_io
-from utils.normalizer import DataNormalizer
-from utils.padder import Padder
+
 import numpy as np
 import tensorflow as tf
 
@@ -27,22 +26,12 @@ def main(args):
 
     with strategy.scope():
 
-        dataio = data_io.Data(args.data_path, global_batch_size)
-        tile_size = 64
-        padder = Padder(tile_size)
-        normalizer = None
-        if args.dataset == "mnist":
-            normalizer = DataNormalizer(min_scale=0.0, max_scale=1.0)
-        elif args.dataset == "cloud":
-            print(f"Data: cloud")
-            normalizer = DataNormalizer(min_scale=1.0, max_scale=10.0)
-        elif args.dataset == "isabel":
-            print(f"Data: Huricane ISABEL")
-            sys.exit()
+        dataio = data_io.Data(args.data_path, global_batch_size, args.tile_size)
 
         iterator = iter(strategy.experimental_distribute_dataset(
-            dataio.load_data(args.dataset, normalizer, padder))
+            dataio.load_data(args.dataset))
             )
+
 
         # Model Initialization
         # print(f"iterator: {next(iterator).shape}")
@@ -76,8 +65,8 @@ def main(args):
             print(f"Generating images...")
             if (args.dataset == "mnist"):
                 generate(vae, iterator, args.path_img_output)
-            elif (args.dataset == "cloud"):
-                reconstruct_img(vae, iterator, normalizer=normalizer, padder=padder, 
+            else:
+                reconstruct_img(vae, iterator, normalizer=dataio.normalizer, padder=dataio.padder, 
                                 img_folder=args.path_img_output, img_name='gen_image.png')
         else:
             if args.eval:
@@ -113,7 +102,7 @@ if __name__ == '__main__':
     parser = configargparse.ArgumentParser()
     # data
     parser.add_argument('--dataset', type=str, default='mnist',
-                        choices=['mnist', 'cloud', 'isabel'],
+                        choices=['mnist', 'cesm', 'isabel'],
                         help='which dataset to use, default="mnist')
     parser.add_argument('--data_path', type=str, default='./data',
                         help='location of the data corpus')
