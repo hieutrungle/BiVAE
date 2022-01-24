@@ -41,7 +41,7 @@ def main(args):
 
         vae = VariationalAutoencoder(args, model_arch, global_batch_size, in_shape)
         print(f"is using se: {vae.use_se}\n")
-        vae.build(input_shape=([None]+ in_shape))
+        # vae.build(input_shape=([None]+ in_shape))
         vae.model().summary()
 
         # Set up for training, evaluation, or generation

@@ -31,11 +31,14 @@ class Data():
                     errno.ENOENT, os.strerror(errno.ENOENT), data_name)
 
         # Make data_len divisible by batch_size
+        utils.get_data_info(data)
 
         data = self.complete_data_with_batch(data)
         self.data_dim = data.shape
 
         data = self.to_tf_dataset(data)
+        # data = data.shuffle(buffer_size=self.data_dim[0]).batch(self.batch_size)
+        data = data.batch(self.batch_size)
         return data.repeat().prefetch(tf.data.AUTOTUNE)
 
     def load_mnist(self):
@@ -53,7 +56,7 @@ class Data():
 
     def load_cesm(self):
 
-        self.normalizer = DataNormalizer(min_scale=1.0, max_scale=10.0)
+        self.normalizer = DataNormalizer(min_scale=1.1, max_scale=10.0)
 
         data_dir = os.path.join(self.data_path, 'cesm_atm_data2')
         filenames = utils.get_filename(data_dir, ".f32")
@@ -83,8 +86,6 @@ class Data():
         data = np.vstack([self.padder.split_image(data[i], self.padder.tile_size) 
                             for i in range(data.shape[0])])
 
-        utils.get_data_info(data)
-
         return data
 
     def load_isabel(self):
@@ -104,7 +105,6 @@ class Data():
     def to_tf_dataset(self, data, dtype=tf.float32):
         data = tf.convert_to_tensor(data, dtype=dtype)
         data = tf.data.Dataset.from_tensor_slices(data)
-        data = data.batch(self.batch_size)
         return data
 
     def plot_image(self, data):

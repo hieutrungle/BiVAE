@@ -52,7 +52,7 @@ def train_step(model, data_iter, losses, optimizer,
             total_loss += sum(model.losses)
         gradients = tape.gradient(total_loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-        
+        # checked_nemuric_loss(total_loss)
         #update metrics
         losses[0].update_state(total_loss)
         losses[1].update_state(recon_loss)
@@ -89,6 +89,7 @@ def train(model, iterator, epochs, optimizer, train_portion,
     val_losses = [val_loss, recon_val_loss, kl_val_loss]
 
     min_kl_weight = 1e-3
+    # min_kl_weight = 0
     kl_weight = min(max((start_epoch-1)/(kl_anneal_portion*epochs), min_kl_weight), 1)
 
     print(f"\nStart Training...")
@@ -120,7 +121,7 @@ def train(model, iterator, epochs, optimizer, train_portion,
                     tf.constant(steps_per_execution, dtype=tf.int32),
                     tf.constant(kl_weight, dtype=tf.float32), strategy)
         
-        # checked_nemuric_loss(train_loss.result().numpy())
+        checked_nemuric_loss(train_loss.result().numpy())
 
         train_loss_results.append(train_loss.result().numpy())
         val_loss_results.append(val_loss.result().numpy())
