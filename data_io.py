@@ -56,7 +56,7 @@ class Data():
 
     def load_cesm(self):
 
-        self.normalizer = DataNormalizer(min_scale=1.1, max_scale=10.0)
+        self.normalizer = DataNormalizer(min_scale=1.1, max_scale=8.0)
 
         data_dir = os.path.join(self.data_path, 'cesm_atm_data2')
         filenames = utils.get_filename(data_dir, ".f32")
@@ -67,6 +67,7 @@ class Data():
         # reshape and flip dataset because it is flipped
         data = data.reshape(26, 1800, 3600)
         data = np.array([np.flipud(layer) for layer in data])
+        data = np.flip(data, axis=0)
         
         # Normalizing
         data = self.normalizer.normalize_minmax(data)

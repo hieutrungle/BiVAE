@@ -37,8 +37,8 @@ def compute_loss(model, x_orig, batch_size, kl_weight=1.0, training=False):
     #         f"\t total_loss: {total_loss.numpy():0.6f}")
     return (total_loss, recon_loss, kl_loss)
 
-def checked_nemuric_loss(loss): 
-    return tf.debugging.check_numerics(loss, message='checking loss')
+def checked_nemuric_loss(loss, message): 
+    return tf.debugging.check_numerics(loss, message=message)
 
 @tf.function
 def train_step(model, data_iter, losses, optimizer, 
@@ -52,7 +52,8 @@ def train_step(model, data_iter, losses, optimizer,
             total_loss += sum(model.losses)
         gradients = tape.gradient(total_loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-        # checked_nemuric_loss(total_loss)
+        # checked_nemuric_loss(recon_loss, message="recon loss issue")
+        # checked_nemuric_loss(kl_loss, message="kl loss issue")
         #update metrics
         losses[0].update_state(total_loss)
         losses[1].update_state(recon_loss)
@@ -121,7 +122,7 @@ def train(model, iterator, epochs, optimizer, train_portion,
                     tf.constant(steps_per_execution, dtype=tf.int32),
                     tf.constant(kl_weight, dtype=tf.float32), strategy)
         
-        checked_nemuric_loss(train_loss.result().numpy())
+        checked_nemuric_loss(train_loss.result().numpy(), message="loss is not numeric!")
 
         train_loss_results.append(train_loss.result().numpy())
         val_loss_results.append(val_loss.result().numpy())
