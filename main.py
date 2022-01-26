@@ -83,10 +83,10 @@ def main(args):
 
                 # optimizer
                 # decay_steps = int(dataio.data_dim[0] * train_portion) * (epochs/4)
-                decay_steps = int(steps_per_execution*0.8)
+                decay_steps = int(steps_per_execution*0.9)
                 lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
                     lr, first_decay_steps=decay_steps,
-                    t_mul=10, m_mul=0.9, alpha=lr_min/lr)
+                    t_mul=2, m_mul=0.9, alpha=lr_min)
                 optimizer = tf.keras.optimizers.Adamax(learning_rate=lr_schedule)
 
                 train(vae, iterator, epochs=epochs, optimizer=optimizer, train_portion=train_portion,
