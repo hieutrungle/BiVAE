@@ -1,7 +1,5 @@
 # Bidirectional Variational Autoencoder with Inverted Autoregressive Flows:
 
-
-
 ## 1. Requirements
 The model is built in Python 3.9 using Tensorflow 2.7.0. Use the following command to install the requirements:
 ```
@@ -20,11 +18,10 @@ python ../BiVAE/main.py --use_se --num_initial_channel 16 --num_process_blocks 2
     --learning_rate 0.001 --learning_rate_min 0.000005 --epochs 100 \
     --model_path ./model_output/mnist_iaf
 ```
+
 </details>
 
-<details><summary>CIFAR-10</summary>
-
-**CESM:**
+<details><summary>CESM-Cloud</summary>
 
 ```shell script
 python ../BiVAE/main.py --use_se --num_initial_channel 16 --num_process_blocks 3 \
@@ -34,6 +31,7 @@ python ../BiVAE/main.py --use_se --num_initial_channel 16 --num_process_blocks 3
     --model_path ./model_output/cesm_iaf_groups1_scales3 --data_path ../BiVAE/data --dataset cesm \
     --tile_size 64
 ```
+
 </details>
 
 ## 3. Evaluating: ``
