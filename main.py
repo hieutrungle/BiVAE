@@ -93,7 +93,7 @@ def main(args):
                     model_dir=model_path, batch_size=global_batch_size,
                     steps_per_execution=steps_per_execution,
                     kl_anneal_portion=args.kl_anneal_portion,
-                    epochs_til_ckpt=args.epochs_til_ckpt, 
+                    epochs_til_ckpt=args.epochs_til_ckpt,
                     steps_til_summary=args.steps_til_summary,
                     resume_checkpoint=resume_checkpoint, strategy=strategy)
 

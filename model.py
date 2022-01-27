@@ -195,8 +195,10 @@ class VariationalAutoencoder(tf.keras.Model):
                     cell_type='ar_nn'
                     cell_archs = self.model_arch[cell_type]
                     name = "NF_"+str(len(nf_cells))
-                    cell = AutoregresiveCell(self.num_channels_of_latent, cell_type=cell_type, 
-                                        cell_archs=cell_archs, name=name)
+                    # cell = InvertedAutoregressiveFlow(self.num_channels_of_latent, cell_type=cell_type, 
+                    #                     cell_archs=cell_archs, name=name)
+                    cell = PairedIAF(self.num_channels_of_latent, cell_type=cell_type, 
+                                        cell_archs=cell_archs, name=name)                 
                     nf_cells.append(cell)
                 
                 if not (s == 0 and g == 0):
@@ -206,7 +208,7 @@ class VariationalAutoencoder(tf.keras.Model):
                     dec_mu_log_sig.append(cell)
             mult = mult // CHANNEL_MULT
 
-        return enc_mu_log_sig, dec_mu_log_sig, nf_cells
+        return tuple(enc_mu_log_sig), tuple(dec_mu_log_sig), tuple(nf_cells)
 
     def init_sampler(self):
         sampler_qs, sampler_ps = list(), list()
@@ -302,15 +304,16 @@ class VariationalAutoencoder(tf.keras.Model):
         
         # apply normalizing flows
         nf_offset = 0
+        log_det = 0.0
         for i in range(self.num_nf):
-            z, log_det = self.nf_cells[i](z, ftr)
+            z, cur_log_det = self.nf_cells[i](z, ftr)
             # log_q = tf.math.subtract(log_q, log_det)
+            log_det = tf.add(log_det, cur_log_det)
         nf_offset += self.num_nf
         
         # prior for z0
         mu_p, log_sigma_p = tf.zeros(shape=tf.shape(z)), tf.zeros(shape=tf.shape(z))
-        zp, log_p = self.sampler_ps[idx_dec](mu_p, log_sigma_p)
-        # kl = tf.reduce_sum(self.sampler_qs[idx_dec].cal_kl(mu_q, log_sigma_q, mu_p, log_sigma_p))
+        # _, log_p = self.sampler_ps[idx_dec](mu_p, log_sigma_p)
         kl = self.kl_calculator(mu_q, log_sigma_q, mu_p, log_sigma_p)
         kl_loss = kl
 
@@ -336,18 +339,16 @@ class VariationalAutoencoder(tf.keras.Model):
                                             tf.math.multiply(tf.add(log_sigma_p, log_sigma_q), 0.5))
 
                     # apply NF
-                    for n in range(self.num_nf):
-                        z, log_det = self.nf_cells[nf_offset + n](z, ftr)
+                    for i in range(self.num_nf):
+                        z, cur_log_det = self.nf_cells[nf_offset + i](z, ftr)
                         # log_q = tf.math.subtract(log_q, log_det)
+                        log_det = tf.add(log_det, cur_log_det)
                     nf_offset += self.num_nf
-                    # self.log_qs.append(log_q)
 
                     # evaluate log_p(z)
-                    zp, log_p = self.sampler_ps[idx_dec](mu_p, log_sigma_p)
-                    # self.log_ps.append(log_p)
-
-                    # kl = tf.reduce_sum(self.sampler_qs[idx_dec].cal_kl(mu_q, log_sigma_q, mu_p, log_sigma_p))
+                    # _, log_p = self.sampler_ps[idx_dec](mu_p, log_sigma_p)
                     kl = self.kl_calculator(mu_q, log_sigma_q, mu_p, log_sigma_p)
+                    kl = tf.add(kl, log_det)
                     kl_loss = tf.add(kl_loss, kl)
                     
                 # combiner_dec

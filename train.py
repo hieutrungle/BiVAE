@@ -157,7 +157,7 @@ def train(model, iterator, epochs, optimizer, train_portion,
     # save model at end of training
     save_training_parameters(checkpoints_dir, epochs, model, training_results)
 
-    # generate(model, next(iterator), model_dir, "gen_img_from_training.png")
+    generate(model, next(iterator), model_dir, "gen_img_from_training.png")
     
 
 def save_training_parameters(checkpoints_dir, epochs, model, training_results):

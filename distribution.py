@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import math
 
 
 def soft_clamp(x: tf.Tensor):
@@ -42,7 +43,8 @@ class NormalSampler(tf.keras.layers.Layer):
         eps = tf.random.normal(shape=tf.shape(mu))
         z = tf.add(tf.multiply(eps, sigma), mu)
 
-        # log_pdf = self.cal_log_pdf(z)
+        # eta = (z - mu) / sigma
+        # log_pdf = -0.5*(tf.square(eta) + tf.math.log(2*math.pi) + 2*tf.math.log(sigma))
         log_pdf = 0
         
         return z, log_pdf
@@ -51,14 +53,6 @@ class NormalSampler(tf.keras.layers.Layer):
     def sample(self):
         eps = tf.random.normal(shape=tf.shape(self.sigma))
         return eps * self.sigma + self.mu
-
-    def cal_log_pdf(self, z):
-        # normal distribution assumption
-        eta = (z - self.mu) / self.sigma
-        log_pdf = - 0.5*(tf.square(eta) + tf.math.log(2*np.pi) \
-                    + 2*tf.math.log(self.sigma+1e-4))
-
-        return log_pdf
 
     def store_parameters(self, mu, log_sigma):
         self.mu = mu
