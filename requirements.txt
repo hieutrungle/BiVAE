@@ -1,0 +1,12 @@
+tensorflow
+tensorflow-addons
+numpy
+scipy
+pandas
+tqdm
+matplotlib
+scikit-learn
+scikit-image
+configargparse
+seaborn
+opencv-python
