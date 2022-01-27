@@ -131,8 +131,8 @@ def train(model, iterator, epochs, optimizer, train_portion,
         total_training_time += training_time
         
         # after each epoch
-        tqdm.write(f"training time: {training_time:0.5f}, " + 
-                    f"LR: {current_lr:0.5f}, kl_weight: {kl_weight:0.5f}, \n\t" +
+        tqdm.write(f"training time: {training_time:0.2f}, " + 
+                    f"LR: {current_lr:0.5f}, kl_weight: {kl_weight:0.6f}, \n\t" +
                     f"kl_train_loss: {kl_train_loss.result():0.5f}, " +
                     f"recon_train_loss: {recon_train_loss.result():0.5f}, " +
                     f"train_loss: {train_loss.result():0.5f}, \n\t"
