@@ -1,21 +1,21 @@
-# Folder:
+# Bidirectional Variational Autoencoder with Inverted Autoregressive Flows:
 
 
-# Quick start
-1. Training: 
 
-## Running the main NVAE training and evaluation scripts
+## 1. Requirements
+The model is built in Python 3.9 using Tensorflow 2.7.0. Use the following command to install the requirements:
+```
+pip install -r requirements.txt
+``` 
+
+
+## 2. Running the training scripts
 
 **MNIST:**
 
 <details><summary>MNIST</summary>
 
 ```shell script
-export EXPR_ID=UNIQUE_EXPR_ID
-export DATA_DIR=PATH_TO_DATA_DIR
-export CHECKPOINT_DIR=PATH_TO_CHECKPOINT_DIR
-export CODE_DIR=PATH_TO_CODE_DIR
-cd $CODE_DIR
 python ../BiVAE/main.py --use_se --num_initial_channel 16 --num_process_blocks 2 \
     --num_preprocess_cells 1 --num_postprocess_cells 1 --num_cell_per_group_enc 1 \
     --num_cell_per_group_dec 1 --num_groups_per_scale 1 --num_scales 2 --batch_size 256 \
@@ -29,11 +29,6 @@ python ../BiVAE/main.py --use_se --num_initial_channel 16 --num_process_blocks 2
 **CESM:**
 
 ```shell script
-export EXPR_ID=UNIQUE_EXPR_ID
-export DATA_DIR=PATH_TO_DATA_DIR
-export CHECKPOINT_DIR=PATH_TO_CHECKPOINT_DIR
-export CODE_DIR=PATH_TO_CODE_DIR
-cd $CODE_DIR
 python ../BiVAE/main.py --use_se --num_initial_channel 16 --num_process_blocks 3 \
     --num_preprocess_cells 1 --num_postprocess_cells 1 --num_cell_per_group_enc 1 \
     --num_cell_per_group_dec 1 --num_groups_per_scale 1 --num_scales 2 --batch_size 128 \
@@ -43,9 +38,9 @@ python ../BiVAE/main.py --use_se --num_initial_channel 16 --num_process_blocks 3
 ```
 </details>
 
-2. Evaluating: ``
+## 3. Evaluating: ``
 
-3. Generating images: ``
+## 4. Generating images: ``
 
 
 # GitHub URL
