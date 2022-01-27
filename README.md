@@ -11,8 +11,6 @@ pip install -r requirements.txt
 
 ## 2. Running the training scripts
 
-**MNIST:**
-
 <details><summary>MNIST</summary>
 
 ```shell script
