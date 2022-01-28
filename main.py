@@ -32,6 +32,8 @@ def main(args):
             dataio.load_data(args.dataset))
             )
 
+        steps_per_execution = dataio.data_dim[0] // global_batch_size
+
         # sys.exit()
 
         # Model Initialization
@@ -42,7 +44,7 @@ def main(args):
         vae = VariationalAutoencoder(args, model_arch, global_batch_size, in_shape)
         print(f"is using se: {vae.use_se}\n")
         # vae.build(input_shape=([None]+ in_shape))
-        vae.model().summary()
+        # vae.model().summary()
 
         # Set up for training, evaluation, or generation
         model_path = args.model_path
@@ -63,11 +65,12 @@ def main(args):
         # Training, Generating, or Evaluating the model
         if args.generate:
             print(f"Generating images...")
+            path_img_output = os.path.join(model_path, 'reconstruction_images') 
             if (args.dataset == "mnist"):
-                generate(vae, iterator, args.path_img_output)
+                generate(vae, iterator, path_img_output)
             else:
-                reconstruct_img(vae, iterator, normalizer=dataio.normalizer, padder=dataio.padder, 
-                                img_folder=args.path_img_output, img_name='gen_image.png')
+                reconstruct_img(vae, iterator, dataio, 
+                                img_folder=path_img_output, prefix_name='')
         else:
             if args.eval:
                 print("Evaluation...")
@@ -79,7 +82,7 @@ def main(args):
                 lr = args.learning_rate
                 lr_min = args.learning_rate_min
                 train_portion = args.train_portion
-                steps_per_execution = dataio.data_dim[0] // global_batch_size
+                
 
                 # optimizer
                 # decay_steps = int(dataio.data_dim[0] * train_portion) * (epochs/4)
@@ -115,9 +118,9 @@ if __name__ == '__main__':
                         help="save encoding vectors during eval")
     parser.add_argument('--generate', action='store_true', default=False,
                         help="run generation")
-    parser.add_argument('--model_path', default="./model_output/distributed_training",
+    parser.add_argument('--model_path', default="./model_output/bivae",
                         help="Path to model folder")
-    parser.add_argument('--path_img_output', default=None,
+    parser.add_argument('--path_img_output', default="./model_output/bivae",
                         help="Path to image output folder when generating new images")
     parser.add_argument('--train_portion', type=float, default=0.95,
                         help="train portion after spliting the original dataset")
