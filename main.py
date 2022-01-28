@@ -120,8 +120,6 @@ if __name__ == '__main__':
                         help="run generation")
     parser.add_argument('--model_path', default="./model_output/bivae",
                         help="Path to model folder")
-    parser.add_argument('--path_img_output', default="./model_output/bivae",
-                        help="Path to image output folder when generating new images")
     parser.add_argument('--train_portion', type=float, default=0.95,
                         help="train portion after spliting the original dataset")
     # logging options
