@@ -130,11 +130,10 @@ class InvertedAutoregressiveFlow(tf.keras.layers.Layer):
         self.conv_s = ConvWN(num_channels_of_latent, kernel_size=1)
 
     def call(self, z, h):
-        z = self.concat_op([z, h])
-        z = self.autoregressive(z)
-        mu = self.conv_mu(z)
-        log_s = self.conv_s(z)
-        s = tf.math.exp(log_s)
+        z_iaf = self.concat_op([z, h])
+        z_iaf = self.autoregressive(z_iaf)
+        mu = self.conv_mu(z_iaf)
+        s = self.conv_s(z_iaf)
         sigma = 1/(1+tf.exp(-s))
         new_z = tf.multiply(z, sigma) + tf.multiply(mu, 1-sigma)
 
