@@ -58,15 +58,20 @@ class Padder():
         ds = [self.pad_image(ds[i]) for i in range(ds.shape[0])]
         return np.array(ds)
 
+    def remove_pad_ds(self, ds):
+        ds = ds[:,self.top:-self.bottom,self.left:-self.right,:]
+        # ds = [ds[i][self.left:-self.right] for i in range(ds.shape[0])]
+        return ds
+
     def print_instance_attributes(self):
         for attribute, value in self.__dict__.items():
             print(attribute, '=', value)
 
-    def split_image(self, image3, tile_size):
+    def split_image(self, image3):
         image_shape = tf.shape(image3)
-        tile_rows = tf.reshape(image3, [image_shape[0], -1, tile_size, image_shape[2]])
+        tile_rows = tf.reshape(image3, [image_shape[0], -1, self.tile_size, image_shape[2]])
         serial_tiles = tf.transpose(tile_rows, [1, 0, 2, 3])
-        return tf.reshape(serial_tiles, [-1, tile_size, tile_size, image_shape[2]])
+        return tf.reshape(serial_tiles, [-1, self.tile_size, self.tile_size, image_shape[2]])
 
     def unsplit_image(self, tiles4, image_shape):
         tile_width = tf.shape(tiles4)[1]
