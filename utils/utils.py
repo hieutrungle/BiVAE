@@ -177,25 +177,6 @@ def get_folder_size(start_path:str='.')->int:
 
     return total_size
 
-def predict(model, data):
-    decoded_data = list()
-    z_samples = [[] for _ in range(len(model.z_samples))]
-    ftrs = [[] for _ in range(len(model.z_samples))]
-
-    for _, x in enumerate(data):
-        x_pred, z_sample, ftr = model.predict(x)
-        # print(f"x_pred.shape: {x_pred.shape}")
-        decoded_data.append(x_pred)
-        for i in range(len(z_sample)):
-            z_samples[i].append(z_sample[i])
-            ftrs[i].append(ftr[i])
-
-    decoded_data = np.concatenate(decoded_data, axis=0)
-    for i in range(len(z_samples)):
-        z_samples[i] = np.concatenate(z_samples[i], axis=0)
-        ftrs[i] = np.concatenate(ftrs[i], axis=0)
-    return decoded_data, z_samples, ftrs
-
 def groups_per_scale(num_scales, num_groups_per_scale, is_adaptive, divider=2, minimum_groups=1):
     g = []
     n = num_groups_per_scale
