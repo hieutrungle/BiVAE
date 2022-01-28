@@ -94,7 +94,7 @@ def main(args):
                     steps_per_execution=steps_per_execution,
                     kl_anneal_portion=args.kl_anneal_portion,
                     epochs_til_ckpt=args.epochs_til_ckpt,
-                    steps_til_summary=args.steps_til_summary,
+                    epochs_til_summary=args.epochs_til_summary,
                     resume_checkpoint=resume_checkpoint, strategy=strategy)
 
 
@@ -126,7 +126,7 @@ if __name__ == '__main__':
     #                help='path to directory where checkpoints & tensorboard events will be saved.')
     parser.add_argument('--epochs_til_ckpt', type=int, default=5,
                         help="Epochs until checkpoint is saved")
-    parser.add_argument('--steps_til_summary', type=int, default=50,
+    parser.add_argument('--epochs_til_summary', type=int, default=1,
                         help="Number of iterations until tensorboard summary is saved")
     parser.add_argument('--logging_root', type=str, default='./logs',
                         help="root for logging")
