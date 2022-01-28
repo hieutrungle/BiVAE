@@ -67,7 +67,7 @@ def train_step(model, data_iter, losses, optimizer,
 
 def train(model, iterator, epochs, optimizer, train_portion, 
         model_dir, batch_size, steps_per_execution, kl_anneal_portion,
-        epochs_til_ckpt, steps_til_summary, resume_checkpoint, strategy):
+        epochs_til_ckpt, epochs_til_summary, resume_checkpoint, strategy):
     
     summaries_dir, checkpoints_dir = utils.mkdir_storage(model_dir, resume_checkpoint)
 
@@ -86,8 +86,11 @@ def train(model, iterator, epochs, optimizer, train_portion,
     recon_train_loss = tf.keras.metrics.Mean()
     kl_val_loss = tf.keras.metrics.Mean()
     recon_val_loss = tf.keras.metrics.Mean()
-    train_losses = [train_loss, recon_train_loss, kl_train_loss]
-    val_losses = [val_loss, recon_val_loss, kl_val_loss]
+    train_losses = tuple([train_loss, recon_train_loss, kl_train_loss])
+    val_losses = tuple([val_loss, recon_val_loss, kl_val_loss])
+    all_losses = tuple(list(train_losses) + list(val_losses))
+
+    writer = tf.summary.create_file_writer(summaries_dir)
 
     min_kl_weight = 1e-3
     # min_kl_weight = 0
@@ -109,7 +112,7 @@ def train(model, iterator, epochs, optimizer, train_portion,
         else:
             current_lr = optimizer.lr.numpy()
 
-        for loss in train_losses + val_losses:
+        for loss in all_losses:
             loss.reset_state()
 
         start_time = timeit.default_timer()
@@ -117,7 +120,7 @@ def train(model, iterator, epochs, optimizer, train_portion,
         # training
         tqdm.write(f"Epoch {epoch} ")
 
-        train_step(model, iterator, tuple(train_losses), optimizer,
+        train_step(model, iterator, train_losses, optimizer,
                     tf.constant(batch_size, dtype=tf.float32),
                     tf.constant(steps_per_execution, dtype=tf.int32),
                     tf.constant(kl_weight, dtype=tf.float32), strategy)
@@ -145,10 +148,13 @@ def train(model, iterator, epochs, optimizer, train_portion,
 
         training_results = (train_loss_results, val_loss_results, total_training_time)
 
+        if not epoch % epochs_til_summary:
+            write_summary_tfboard(all_losses, epoch, writer)
+
         # save model when epochs_til_ckpt requirement is met
         if (not epoch % epochs_til_ckpt) and epoch:
-            save_training_parameters(checkpoints_dir, epoch, model, training_results)
-
+            model.save_weights(os.path.join(checkpoints_dir, f'model_{epoch:06d}'))
+            
         gc.collect()
         
     print(f"total training time: {total_training_time:0.5f}")
@@ -156,9 +162,29 @@ def train(model, iterator, epochs, optimizer, train_portion,
     
     # save model at end of training
     save_training_parameters(checkpoints_dir, epochs, model, training_results)
+    write_summary_tfboard(all_losses, epochs, writer)
 
     generate(model, next(iterator), model_dir, "gen_img_from_training.png")
     
+
+def write_summary_tfboard(losses, epoch, writer):
+    train_losses = list(losses)[:3]
+    val_losses = list(losses)[3:]
+    with writer.as_default():
+        write_train_losses_tfboard(train_losses, epoch)
+        write_val_losses_tfboard(val_losses, epoch)
+
+def write_train_losses_tfboard(train_losses, epoch):
+    (train_loss, recon_train_loss, kl_train_loss) = train_losses
+    tf.summary.scalar('train_loss', train_loss.result(), step=epoch)
+    tf.summary.scalar('recon_train_loss', recon_train_loss.result(), step=epoch)
+    tf.summary.scalar('kl_train_loss', kl_train_loss.result(), step=epoch)
+
+def write_val_losses_tfboard(val_losses, epoch):
+    (val_loss, recon_val_loss, kl_val_loss) = val_losses
+    tf.summary.scalar('val_loss', val_loss.result(), step=epoch)
+    tf.summary.scalar('recon_val_loss', recon_val_loss.result(), step=epoch)
+    tf.summary.scalar('kl_val_loss', kl_val_loss.result(), step=epoch)
 
 def save_training_parameters(checkpoints_dir, epochs, model, training_results):
     (train_loss_results, val_loss_results, total_training_time) = training_results
