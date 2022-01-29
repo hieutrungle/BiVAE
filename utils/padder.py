@@ -59,8 +59,14 @@ class Padder():
         return np.array(ds)
 
     def remove_pad_ds(self, ds):
-        ds = ds[:,self.top:-self.bottom,self.left:-self.right,:]
-        # ds = [ds[i][self.left:-self.right] for i in range(ds.shape[0])]
+        if self.bottom == 0 and self.right == 0:
+            ds = ds[:,self.top:,self.left:,:]
+        elif self.bottom == 0:
+            ds = ds[:,self.top:,self.left:-self.right,:]
+        elif self.right == 0:
+            ds = ds[:,self.top:-self.bottom,self.left:,:]
+        else:
+            ds = ds[:,self.top:-self.bottom,self.left:-self.right,:]
         return ds
 
     def print_instance_attributes(self):
