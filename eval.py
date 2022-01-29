@@ -137,6 +137,4 @@ def plot_metrics(filename):
 
     plt.savefig(os.path.join(os.path.dirname(filename), "metrics"))
 
-
-
     plt.show()
