@@ -63,8 +63,9 @@ def evaluate(model, iterator, dataio, model_path, save_encoding=False):
                             'mse': mse, 'psnr': psnr, 'ssim': ssim}
                             })
             pbar.update(steps_per_execution)
-            pbar.set_description(f"Iter: {curr_iter}, MSE: {mse:.04f}, " +
-                                f"PSNR: {psnr:.04f}, SSIM: {ssim:.04f}")
+            tqdm.write(f"Iter: {curr_iter}, MSE: {mse:.06f}, " +
+                        f"PSNR: {psnr:.03f}, SSIM: {ssim:.05f}"
+                        )
 
     # save metrics
     metric_fname = os.path.join(eval_dir, f'metrics.txt')
@@ -116,18 +117,26 @@ def plot_metrics(filename):
     data = json.loads(data)
     df = pd.DataFrame.from_dict(data).transpose()
 
-    fig, axes = plt.subplots(1, 2, figsize=(15, 5))
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10))
     fig.suptitle('Metrics')
 
     sns.lineplot(x=df.index.astype(int),y="psnr", data=df, ax=axes[0])
-    axes[0].legend(labels=["psnr"])
-    axes[0].set_ylabel("magnitude")
+    axes[0].legend(labels=["PSNR"])
+    axes[0].set_ylabel("psnr")
     axes[0].set_xlabel("epochs")
     
-    sns.lineplot(x=df.index.astype(int), y="mse", data=df, ax=axes[1])
     sns.lineplot(x=df.index.astype(int), y="ssim", data=df, ax=axes[1])
-    axes[1].legend(labels=["mse","ssim"])
-    axes[1].set_ylabel("magnitude")
+    axes[1].legend(labels=["SSIM"])
+    axes[1].set_ylabel("ssim")
     axes[1].set_xlabel("epochs")
-    plt.savefig(os.path.join(os.path.dirname(filename), "ssim"))
+
+    sns.lineplot(x=df.index.astype(int), y="mse", data=df, ax=axes[2])
+    axes[2].legend(labels=["MSE"])
+    axes[2].set_ylabel("mse")
+    axes[2].set_xlabel("epochs")
+
+    plt.savefig(os.path.join(os.path.dirname(filename), "metrics"))
+
+
+
     plt.show()
