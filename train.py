@@ -119,32 +119,32 @@ def train(model, iterator, epochs, optimizer, train_portion,
         
         # training
         tqdm.write(f"Epoch {epoch} ")
-        with tqdm(total=steps_per_execution) as pbar:
+        # with tqdm(total=steps_per_execution) as pbar:
 
-            train_step(model, iterator, train_losses, optimizer,
-                    tf.constant(batch_size, dtype=tf.float32),
-                    tf.constant(steps_per_execution, dtype=tf.int32),
-                    tf.constant(kl_weight, dtype=tf.float32), strategy)
-            pbar.update(steps_per_execution)
-            
-            checked_nemuric_loss(train_loss.result().numpy(), message="loss is not numeric!")
+        train_step(model, iterator, train_losses, optimizer,
+                tf.constant(batch_size, dtype=tf.float32),
+                tf.constant(steps_per_execution, dtype=tf.int32),
+                tf.constant(kl_weight, dtype=tf.float32), strategy)
+        # pbar.update(steps_per_execution)
+        
+        checked_nemuric_loss(train_loss.result().numpy(), message="loss is not numeric!")
 
-            train_loss_results.append(train_loss.result().numpy())
-            val_loss_results.append(val_loss.result().numpy())
+        train_loss_results.append(train_loss.result().numpy())
+        val_loss_results.append(val_loss.result().numpy())
 
-            training_time = timeit.default_timer()-start_time
-            total_training_time += training_time
-            
-            # after each epoch
-            tqdm.write(f"training time: {training_time:0.2f}, " + 
-                        f"LR: {current_lr:0.5f}, kl_weight: {kl_weight:0.6f}, \n\t" +
-                        f"kl_train_loss: {kl_train_loss.result():0.5f}, " +
-                        f"recon_train_loss: {recon_train_loss.result():0.5f}, " +
-                        f"train_loss: {train_loss.result():0.5f}, \n\t"
-                        # f"kl_val_loss: {kl_val_loss.result():0.5f}, " +
-                        # f"recon_val_loss: {recon_val_loss.result():0.5f}, " + 
-                        # f"val_loss: {val_loss.result():0.5f}"
-                        )
+        training_time = timeit.default_timer()-start_time
+        total_training_time += training_time
+        
+        # after each epoch
+        tqdm.write(f"training time: {training_time:0.2f}, " + 
+                    f"LR: {current_lr:0.5f}, kl_weight: {kl_weight:0.6f}, \n\t" +
+                    f"kl_train_loss: {kl_train_loss.result():0.5f}, " +
+                    f"recon_train_loss: {recon_train_loss.result():0.5f}, " +
+                    f"train_loss: {train_loss.result():0.5f}, \n\t"
+                    # f"kl_val_loss: {kl_val_loss.result():0.5f}, " +
+                    # f"recon_val_loss: {recon_val_loss.result():0.5f}, " + 
+                    # f"val_loss: {val_loss.result():0.5f}"
+                    )
                     
         kl_weight = min(max((epoch)/(kl_anneal_portion*epochs), min_kl_weight), 1)
 
