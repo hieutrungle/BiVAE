@@ -1,19 +1,20 @@
 import matplotlib.pyplot as plt
-from plot_metrics import plot_metrics
+import pandas as pd
+import seaborn as sns
 import timeit
 import numpy as np
 import os
 import re
 import sys
 from skimage import metrics
-from generate import generate
+import reconstruct
 import json
 import tensorflow as tf
 import pickle
 from tqdm import tqdm
 from utils import utils
 
-def evaluate(model, data, model_path, save_encoding=False, padding=None):
+def evaluate(model, iterator, dataio, model_path, save_encoding=False):
 
     # Get names of weight_paths
     checkpoint_dir = os.path.join(model_path, 'checkpoints')
@@ -31,55 +32,46 @@ def evaluate(model, data, model_path, save_encoding=False, padding=None):
     # complete names of weight_paths
     weight_paths = [os.path.join(checkpoint_dir, f) for f in weight_paths]
     metrics = {}
-    unbatch_data = data.unbatch()
-    unbatch_data = np.stack(list(unbatch_data))
     
-    with tqdm(iters) as pbar:
-        for curr_iter, weight_path in zip(iters, weight_paths):
-            
+    steps_per_execution = dataio.data_dim[0] // dataio.batch_size
+
+    for curr_iter, weight_path in zip(iters, weight_paths):
+        
+        with tqdm(total=steps_per_execution) as pbar:
             # load model
             model.load_weights(weight_path)
 
-            # gen_sample = [sample for sample in data.take(1)][0]
-            # generate(model, gen_sample, eval_dir)
+            (orig_imgs, recon_imgs) = reconstruct.reconstruct_img(model, iterator, dataio, is_plotting=False)
 
-            decoded_data, z_samples, ftrs = utils.predict(model, data)
+            # if save_encoding:
+            #     # export compressed data to pickle file
+            #     z_sample_file = f'z_samples_{curr_iter:06d}.pkl'
+            #     with open(os.path.join(eval_dir, z_sample_file),'wb') as f:
+            #         pickle.dump(z_samples, f)
+            #     ftr_file = f'ftrs_{curr_iter:06d}.pkl'
+            #     with open(os.path.join(eval_dir, ftr_file),'wb') as f:
+            #         pickle.dump(ftrs, f)
 
-            if save_encoding:
-                # export compressed data to pickle file
-                z_sample_file = f'z_samples_{curr_iter:06d}.pkl'
-                with open(os.path.join(eval_dir, z_sample_file),'wb') as f:
-                    pickle.dump(z_samples, f)
-                ftr_file = f'ftrs_{curr_iter:06d}.pkl'
-                with open(os.path.join(eval_dir, ftr_file),'wb') as f:
-                    pickle.dump(ftrs, f)
-
-                # Load encoded data
-                with open(os.path.join(eval_dir, z_sample_file),'rb') as f:
-                    z_samples = pickle.load(f)
-
-            # Process decoded data
-            if padding is not None:
-                decoded_data = decoded_data.reshape(np.prod(decoded_data.shape))
-                decoded_data = decoded_data[:-padding]
-            decoded_data = decoded_data.reshape(unbatch_data.shape)
+            #     # Load encoded data
+            #     with open(os.path.join(eval_dir, z_sample_file),'rb') as f:
+            #         z_samples = pickle.load(f)
             
             # record metrics
-            psnr, ssim, mse = get_metrics(unbatch_data, decoded_data)
+            psnr, ssim, mse = get_metrics(orig_imgs, recon_imgs)
             metrics.update({curr_iter: {
                             'weight_path': weight_path, 
                             'mse': mse, 'psnr': psnr, 'ssim': ssim}
                             })
-            pbar.update(1)
-            pbar.set_description(f"Iter: {curr_iter}, MSE: {mse:.03f}, " +
-                                f"PSNR: {psnr:.03f}, SSIM: {ssim:.03f}")
+            pbar.update(steps_per_execution)
+            pbar.set_description(f"Iter: {curr_iter}, MSE: {mse:.04f}, " +
+                                f"PSNR: {psnr:.04f}, SSIM: {ssim:.04f}")
 
-        # save metrics
-        metric_fname = os.path.join(eval_dir, f'metrics.txt')
-        with open(metric_fname, "w") as f:
-            f.write(json.dumps(metrics)+"\n")
+    # save metrics
+    metric_fname = os.path.join(eval_dir, f'metrics.txt')
+    with open(metric_fname, "w") as f:
+        f.write(json.dumps(metrics)+"\n")
 
-        plot_metrics(metric_fname)
+    plot_metrics(metric_fname)
 
 def get_metrics(image_true, image_test):
 
@@ -116,3 +108,26 @@ def plot_images(images):
         plt.subplot(4, 4, i + 1)
         plt.imshow(images[i], cmap="gray")
         plt.axis('off')
+
+def plot_metrics(filename):
+    
+    with open(filename, 'r') as f:
+        data = f.read()
+    data = json.loads(data)
+    df = pd.DataFrame.from_dict(data).transpose()
+
+    fig, axes = plt.subplots(1, 2, figsize=(15, 5))
+    fig.suptitle('Metrics')
+
+    sns.lineplot(x=df.index.astype(int),y="psnr", data=df, ax=axes[0])
+    axes[0].legend(labels=["psnr"])
+    axes[0].set_ylabel("magnitude")
+    axes[0].set_xlabel("epochs")
+    
+    sns.lineplot(x=df.index.astype(int), y="mse", data=df, ax=axes[1])
+    sns.lineplot(x=df.index.astype(int), y="ssim", data=df, ax=axes[1])
+    axes[1].legend(labels=["mse","ssim"])
+    axes[1].set_ylabel("magnitude")
+    axes[1].set_xlabel("epochs")
+    plt.savefig(os.path.join(os.path.dirname(filename), "ssim"))
+    plt.show()
