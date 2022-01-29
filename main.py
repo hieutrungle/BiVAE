@@ -68,13 +68,13 @@ def main(args):
             if (args.dataset == "mnist"):
                 generate(vae, iterator, path_img_output)
             else:
-                reconstruct_img(vae, iterator, dataio, 
+                reconstruct_img(vae, iterator, dataio, is_plotting=True,
                                 img_folder=path_img_output, prefix_name='')
         else:
             if args.eval:
                 print("Evaluation...")
-                evaluate(vae, iterator, model_path=model_path, 
-                        save_encoding=args.save_encoding, padding=None)
+                evaluate(vae, iterator, dataio, model_path=model_path, 
+                        save_encoding=args.save_encoding)
             else:
                 # Training parameters
                 epochs = args.epochs
@@ -196,8 +196,8 @@ if __name__ == '__main__':
                         help='resume iteration')
     args = parser.parse_args()
 
-    if (args.generate and (args.model_path is None or args.path_img_output is None or args.iter is None)):
-        parser.error('The --generate argument requires the --model_path and --path_img_output')
+    if (args.generate and (args.model_path is None)):
+        parser.error('The --generate argument requires the --model_path')
 
     if (args.resume and args.iter is None):
         parser.error('The --resume argument requires the --iter')
