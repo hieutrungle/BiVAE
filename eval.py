@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import timeit
-import numpy as np
 import os
 import re
 import sys
@@ -10,9 +8,10 @@ from skimage import metrics
 import reconstruct
 import json
 import tensorflow as tf
-import pickle
 from tqdm import tqdm
+import seaborn as sns
 from utils import utils
+sns.set_theme()
 
 def evaluate(model, iterator, dataio, model_path, save_encoding=False):
 
@@ -116,25 +115,32 @@ def plot_metrics(filename):
         data = f.read()
     data = json.loads(data)
     df = pd.DataFrame.from_dict(data).transpose()
+    print(df.head())
 
     fig, axes = plt.subplots(2, 2, figsize=(15, 10))
     fig.suptitle('Metrics')
 
-    sns.lineplot(x=df.index.astype(int),y="psnr", data=df, ax=axes[0])
-    axes[0].legend(labels=["PSNR"])
-    axes[0].set_ylabel("psnr")
-    axes[0].set_xlabel("epochs")
+    sns.lineplot(x=df.index.astype(int),y="psnr", data=df, ax=axes[0,0])
+    axes[0,0].legend(labels=["PSNR"])
+    axes[0,0].set_ylabel("psnr")
+    axes[0,0].set_xlabel("epochs")
     
-    sns.lineplot(x=df.index.astype(int), y="ssim", data=df, ax=axes[1])
-    axes[1].legend(labels=["SSIM"])
-    axes[1].set_ylabel("ssim")
-    axes[1].set_xlabel("epochs")
+    sns.lineplot(x=df.index.astype(int), y="ssim", data=df, ax=axes[0,1])
+    axes[0,1].legend(labels=["SSIM"])
+    axes[0,1].set_ylabel("ssim")
+    axes[0,1].set_xlabel("epochs")
 
-    sns.lineplot(x=df.index.astype(int), y="mse", data=df, ax=axes[2])
-    axes[2].legend(labels=["MSE"])
-    axes[2].set_ylabel("mse")
-    axes[2].set_xlabel("epochs")
+    sns.lineplot(x=df.index.astype(int), y="mse", data=df, ax=axes[1,0])
+    axes[1,0].legend(labels=["MSE"])
+    axes[1,0].set_ylabel("mse")
+    axes[1,0].set_xlabel("epochs")
 
     plt.savefig(os.path.join(os.path.dirname(filename), "metrics"))
 
     plt.show()
+
+if __name__=='__main__':
+    eval_dir = "model_output"
+    metric_fname = os.path.join(eval_dir, f'metrics.txt')
+
+    plot_metrics(metric_fname)
