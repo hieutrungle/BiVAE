@@ -36,35 +36,35 @@ def evaluate(model, iterator, dataio, model_path, save_encoding=False):
 
     for curr_iter, weight_path in zip(iters, weight_paths):
         
-        with tqdm(total=steps_per_execution) as pbar:
-            # load model
-            model.load_weights(weight_path)
+        # with tqdm(total=steps_per_execution) as pbar:
+        # load model
+        model.load_weights(weight_path)
 
-            (orig_imgs, recon_imgs) = reconstruct.reconstruct_img(model, iterator, dataio, is_plotting=False)
+        (orig_imgs, recon_imgs) = reconstruct.reconstruct_img(model, iterator, dataio, is_plotting=False)
 
-            # if save_encoding:
-            #     # export compressed data to pickle file
-            #     z_sample_file = f'z_samples_{curr_iter:06d}.pkl'
-            #     with open(os.path.join(eval_dir, z_sample_file),'wb') as f:
-            #         pickle.dump(z_samples, f)
-            #     ftr_file = f'ftrs_{curr_iter:06d}.pkl'
-            #     with open(os.path.join(eval_dir, ftr_file),'wb') as f:
-            #         pickle.dump(ftrs, f)
+        # if save_encoding:
+        #     # export compressed data to pickle file
+        #     z_sample_file = f'z_samples_{curr_iter:06d}.pkl'
+        #     with open(os.path.join(eval_dir, z_sample_file),'wb') as f:
+        #         pickle.dump(z_samples, f)
+        #     ftr_file = f'ftrs_{curr_iter:06d}.pkl'
+        #     with open(os.path.join(eval_dir, ftr_file),'wb') as f:
+        #         pickle.dump(ftrs, f)
 
-            #     # Load encoded data
-            #     with open(os.path.join(eval_dir, z_sample_file),'rb') as f:
-            #         z_samples = pickle.load(f)
-            
-            # record metrics
-            psnr, ssim, mse = get_metrics(orig_imgs, recon_imgs)
-            metrics.update({curr_iter: {
-                            'weight_path': weight_path, 
-                            'mse': mse, 'psnr': psnr, 'ssim': ssim}
-                            })
-            pbar.update(steps_per_execution)
-            tqdm.write(f"Iter: {curr_iter}, MSE: {mse:.06f}, " +
-                        f"PSNR: {psnr:.03f}, SSIM: {ssim:.05f}"
-                        )
+        #     # Load encoded data
+        #     with open(os.path.join(eval_dir, z_sample_file),'rb') as f:
+        #         z_samples = pickle.load(f)
+        
+        # record metrics
+        psnr, ssim, mse = get_metrics(orig_imgs, recon_imgs)
+        metrics.update({curr_iter: {
+                        'weight_path': weight_path, 
+                        'mse': mse, 'psnr': psnr, 'ssim': ssim}
+                        })
+        # pbar.update(steps_per_execution)
+        tqdm.write(f"Iter: {curr_iter}, MSE: {mse:.06f}, " +
+                    f"PSNR: {psnr:.03f}, SSIM: {ssim:.05f}\n"
+                    )
 
     # save metrics
     metric_fname = os.path.join(eval_dir, f'metrics.txt')
@@ -115,7 +115,6 @@ def plot_metrics(filename):
         data = f.read()
     data = json.loads(data)
     df = pd.DataFrame.from_dict(data).transpose()
-    print(df.head())
 
     fig, axes = plt.subplots(2, 2, figsize=(15, 10))
     fig.suptitle('Metrics')
