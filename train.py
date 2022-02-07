@@ -37,9 +37,6 @@ def compute_loss(model, x_orig, batch_size, kl_weight=1.0, training=False):
     #         f"\t total_loss: {total_loss.numpy():0.6f}")
     return (total_loss, recon_loss, kl_loss)
 
-def checked_nemuric_loss(loss, message): 
-    return tf.debugging.check_numerics(loss, message=message)
-
 @tf.function
 def train_step(model, data_iter, losses, optimizer, 
                 batch_size, steps_per_execution, kl_weight, strategy):
@@ -52,8 +49,6 @@ def train_step(model, data_iter, losses, optimizer,
             total_loss += sum(model.losses)
         gradients = tape.gradient(total_loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-        # checked_nemuric_loss(recon_loss, message="recon loss issue")
-        # checked_nemuric_loss(kl_loss, message="kl loss issue")
         #update metrics
         losses[0].update_state(total_loss)
         losses[1].update_state(recon_loss)
@@ -65,16 +60,36 @@ def train_step(model, data_iter, losses, optimizer,
             args=(model, next(data_iter), losses, optimizer, batch_size, kl_weight)
             )
 
-def train(model, iterator, epochs, optimizer, train_portion, 
-        model_dir, batch_size, steps_per_execution, kl_anneal_portion,
-        epochs_til_ckpt, epochs_til_summary, resume_checkpoint, strategy):
+# def train(model, iterator, epochs, optimizer, 
+#         model_dir, batch_size, steps_per_execution, kl_anneal_portion,
+#         epochs_til_ckpt, epochs_til_summary, resume_checkpoint, strategy, debug):
+
+def train(model, dataio, args, batch_size, strategy):
+    # Training parameters
+    epochs = args.epochs
+    lr = args.learning_rate
+    lr_min = args.learning_rate_min
+    rd_const = args.rate_distortion_const
+    debug = args.check_numerics
+    steps_per_execution = dataio.data_dim[0] // batch_size
+    model_path = args.model_path
     
-    summaries_dir, checkpoints_dir = utils.mkdir_storage(model_dir, resume_checkpoint)
+    # optimizer
+    decay_steps = int(steps_per_execution*0.9)
+    lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
+        lr, first_decay_steps=decay_steps,
+        t_mul=2, m_mul=0.75, alpha=lr_min)
+    optimizer = tf.keras.optimizers.Adamax(learning_rate=lr_schedule)
+
+    if debug:
+        tf.debugging.enable_check_numerics()
+    
+    summaries_dir, checkpoints_dir = utils.mkdir_storage(model_path, args.resume)
 
     # Save training parameters if we need to resume training in the future
     start_epoch = 1
-    if 'resume_epoch' in resume_checkpoint:
-        start_epoch = resume_checkpoint['resume_epoch'] + 1
+    if args.resume:
+        start_epoch = args.iter + 1
 
     train_loss_results, val_loss_results = [], []
     total_training_time = 0
@@ -94,7 +109,7 @@ def train(model, iterator, epochs, optimizer, train_portion,
 
     min_kl_weight = 1e-3
     # min_kl_weight = 0
-    kl_weight = min(max((start_epoch-1)/(kl_anneal_portion*epochs), min_kl_weight), 1)
+    kl_weight = min(max((start_epoch-1)/(args.kl_anneal_portion*epochs), min_kl_weight), 1)
 
     print(f"\nStart Training...")
     print(f"Training steps per epoch:{steps_per_execution}")
@@ -126,8 +141,6 @@ def train(model, iterator, epochs, optimizer, train_portion,
                 tf.constant(steps_per_execution, dtype=tf.int32),
                 tf.constant(kl_weight, dtype=tf.float32), strategy)
         # pbar.update(steps_per_execution)
-        
-        checked_nemuric_loss(train_loss.result().numpy(), message="loss is not numeric!")
 
         train_loss_results.append(train_loss.result().numpy())
         val_loss_results.append(val_loss.result().numpy())
@@ -146,15 +159,15 @@ def train(model, iterator, epochs, optimizer, train_portion,
                     # f"val_loss: {val_loss.result():0.5f}"
                     )
                     
-        kl_weight = min(max((epoch)/(kl_anneal_portion*epochs), min_kl_weight), 1)
+        kl_weight = min(max((epoch)/(args.kl_anneal_portion*epochs), min_kl_weight), 1)
 
         training_results = (train_loss_results, val_loss_results, total_training_time)
 
-        if not epoch % epochs_til_summary:
+        if not epoch % args.epochs_til_summary:
             write_summary_tfboard(all_losses, epoch, writer)
 
         # save model when epochs_til_ckpt requirement is met
-        if (not epoch % epochs_til_ckpt) and epoch:
+        if (not epoch % args.epochs_til_ckpt) and epoch:
             model.save_weights(os.path.join(checkpoints_dir, f'model_{epoch:06d}'))
             
         gc.collect()
@@ -166,7 +179,7 @@ def train(model, iterator, epochs, optimizer, train_portion,
     save_training_parameters(checkpoints_dir, epochs, model, training_results)
     write_summary_tfboard(all_losses, epochs, writer)
 
-    generate(model, next(iterator), model_dir, "gen_img_from_training.png")
+    # generate(model, next(iterator), model_path, "gen_img_from_training.png")
     
 
 def write_summary_tfboard(losses, epoch, writer):

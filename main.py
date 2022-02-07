@@ -32,10 +32,6 @@ def main(args):
             dataio.load_data(args.dataset))
             )
 
-        steps_per_execution = dataio.data_dim[0] // global_batch_size
-
-        # sys.exit()
-
         # Model Initialization
         in_shape = list(dataio.data_dim[1:])
         model_arch = utils.get_model_arch(args.model_arch)
@@ -76,28 +72,29 @@ def main(args):
                 evaluate(vae, iterator, dataio, model_path=model_path, 
                         save_encoding=args.save_encoding)
             else:
-                # Training parameters
-                epochs = args.epochs
-                lr = args.learning_rate
-                lr_min = args.learning_rate_min
-                train_portion = args.train_portion
+                # # Training parameters
+                # epochs = args.epochs
+                # lr = args.learning_rate
+                # lr_min = args.learning_rate_min
+                # rd_const = args.rate_distortion_const
+                # debug = args.check_numerics
                 
+                # # optimizer
+                # decay_steps = int(steps_per_execution*0.9)
+                # lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
+                #     lr, first_decay_steps=decay_steps,
+                #     t_mul=2, m_mul=0.75, alpha=lr_min)
+                # optimizer = tf.keras.optimizers.Adamax(learning_rate=lr_schedule)
 
-                # optimizer
-                # decay_steps = int(dataio.data_dim[0] * train_portion) * (epochs/4)
-                decay_steps = int(steps_per_execution*0.9)
-                lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
-                    lr, first_decay_steps=decay_steps,
-                    t_mul=2, m_mul=0.75, alpha=lr_min)
-                optimizer = tf.keras.optimizers.Adamax(learning_rate=lr_schedule)
+                train(vae, dataio, args, batch_size=global_batch_size, strategy=strategy)
 
-                train(vae, iterator, epochs=epochs, optimizer=optimizer, train_portion=train_portion,
-                    model_dir=model_path, batch_size=global_batch_size,
-                    steps_per_execution=steps_per_execution,
-                    kl_anneal_portion=args.kl_anneal_portion,
-                    epochs_til_ckpt=args.epochs_til_ckpt,
-                    epochs_til_summary=args.epochs_til_summary,
-                    resume_checkpoint=resume_checkpoint, strategy=strategy)
+                # train(vae, iterator, epochs=epochs, optimizer=optimizer, 
+                #     model_dir=model_path, batch_size=global_batch_size,
+                #     steps_per_execution=steps_per_execution,
+                #     kl_anneal_portion=args.kl_anneal_portion,
+                #     epochs_til_ckpt=args.epochs_til_ckpt,
+                #     epochs_til_summary=args.epochs_til_summary,
+                #     resume_checkpoint=resume_checkpoint, strategy=strategy, debug=debug)
 
 
 if __name__ == '__main__':
@@ -119,8 +116,11 @@ if __name__ == '__main__':
                         help="run generation")
     parser.add_argument('--model_path', default="./model_output/bivae",
                         help="Path to model folder")
-    parser.add_argument('--train_portion', type=float, default=0.95,
-                        help="train portion after spliting the original dataset")
+    parser.add_argument('--rate_distortion_const', type=float, default=0.01,
+                        help="rate-distortion trade-off constant")
+    parser.add_argument("--check_numerics", action="store_true", default=False,
+                        help="Enable TF support for catching NaN and Inf in tensors.")
+
     # logging options
     # parser.add_argument('--experiment_name', type=str, required=True,
     #                help='path to directory where checkpoints & tensorboard events will be saved.')
