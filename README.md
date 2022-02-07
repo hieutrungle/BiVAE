@@ -45,9 +45,8 @@ python main.py --use_se --num_initial_channel 16 --num_process_blocks 3 \
 
 </details>
 
-## 3. Evaluating: ``
+## 4. Evaluating:
 
-## 4. Generating images: ``
 
 
 # GitHub URL
