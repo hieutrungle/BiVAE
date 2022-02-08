@@ -42,19 +42,6 @@ def evaluate(model, iterator, dataio, model_path, save_encoding=False):
 
         (orig_imgs, recon_imgs) = reconstruct.reconstruct_img(model, iterator, dataio, is_plotting=False)
 
-        # if save_encoding:
-        #     # export compressed data to pickle file
-        #     z_sample_file = f'z_samples_{curr_iter:06d}.pkl'
-        #     with open(os.path.join(eval_dir, z_sample_file),'wb') as f:
-        #         pickle.dump(z_samples, f)
-        #     ftr_file = f'ftrs_{curr_iter:06d}.pkl'
-        #     with open(os.path.join(eval_dir, ftr_file),'wb') as f:
-        #         pickle.dump(ftrs, f)
-
-        #     # Load encoded data
-        #     with open(os.path.join(eval_dir, z_sample_file),'rb') as f:
-        #         z_samples = pickle.load(f)
-        
         # record metrics
         psnr, ssim, mse = get_metrics(orig_imgs, recon_imgs)
         metrics.update({curr_iter: {
@@ -72,6 +59,53 @@ def evaluate(model, iterator, dataio, model_path, save_encoding=False):
         f.write(json.dumps(metrics)+"\n")
 
     plot_metrics(metric_fname)
+
+def read_png(filename):
+    """Loads a PNG image file."""
+    string = tf.io.read_file(filename)
+    return tf.image.decode_image(string, channels=3)
+
+
+def write_png(filename, image):
+    """Saves an image to a PNG file."""
+    string = tf.image.encode_png(image)
+    tf.io.write_file(filename, string)
+
+def compress(args):
+    """Compresses an image."""
+    # Load model and use it to compress the image.
+    model = tf.keras.models.load_model(args.model_path)
+    x = read_png(args.input_file)
+    tensors = model.compress(x)
+
+    # Write a binary file with the shape information and the compressed string.
+    packed = utils.PackedTensors()
+    packed.pack(tensors)
+    with open(args.output_file, "wb") as f:
+        f.write(packed.string)
+
+    # If requested, decompress the image and measure performance.
+    if args.verbose:
+        x_hat = model.decompress(*tensors)
+
+        # Cast to float in order to compute metrics.
+        x = tf.cast(x, tf.float32)
+        x_hat = tf.cast(x_hat, tf.float32)
+        mse = tf.reduce_mean(tf.math.squared_difference(x, x_hat))
+        psnr = tf.squeeze(tf.image.psnr(x, x_hat, 255))
+        msssim = tf.squeeze(tf.image.ssim_multiscale(x, x_hat, 255))
+        msssim_db = -10. * tf.math.log(1 - msssim) / tf.math.log(10.)
+
+        # The actual bits per pixel including entropy coding overhead.
+        num_pixels = tf.reduce_prod(tf.shape(x)[:-1])
+        bpp = len(packed.string) * 8 / num_pixels
+
+        print(f"Mean squared error: {mse:0.4f}")
+        print(f"PSNR (dB): {psnr:0.2f}")
+        print(f"Multiscale SSIM: {msssim:0.4f}")
+        print(f"Multiscale SSIM (dB): {msssim_db:0.2f}")
+        print(f"Bits per pixel: {bpp:0.4f}")
+
 
 def get_metrics(image_true, image_test):
 
